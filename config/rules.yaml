@@ -1,0 +1,71 @@
+# INS-C2-006 — underwriting rule set
+# ==================================
+# This file is LOADED AT RUNTIME by src/services/service.py and drives
+# UnderwritingRuleValidateNode, the remediation text in GenerateReportNode, and
+# the output-boundary vocabulary check in PostProcessNode. Editing it changes
+# agent behaviour; there is no second copy of these values in the code.
+#
+# Every value is re-validated on load (finite, in range, correctly ordered).
+# A malformed value fails the request closed rather than silently reverting to
+# a default. If the file is absent altogether the built-in baseline in
+# src/services/service.py applies.
+#
+# Format version: 1
+
+version: 1
+
+# ── 1. Completeness ───────────────────────────────────────────────────────
+# These fields must be present and non-empty; absence results in "fail".
+required_fields:
+  - policy_type
+  - coverage_amount
+  - age_at_application
+
+# ── 2. Products ───────────────────────────────────────────────────────────
+# Supported policy_type values. Anything else fails the business-rule check.
+policy_types:
+  - term_life
+  - whole_life
+  - endowment
+
+# Accepted premium_class values (optional field; mismatch is a warning).
+premium_classes:
+  - standard
+  - rated
+  - declined
+
+# Occupation risk-classification code: one uppercase letter + three digits
+# (optional field; mismatch is a warning).
+occupation_code_pattern: "^[A-Z][0-9]{3}$"
+
+# ── 3. Thresholds, per underwriting profile ───────────────────────────────
+# The caller selects a profile with input_context.rule_profile; absent, the
+# profile named by default_profile applies. Coverage figures are JPY.
+#
+#   coverage_min   below this the application is rejected outright
+#   coverage_warn  at or above this the application needs specialist review
+#   coverage_max   the ceiling this profile is authorised to quote
+#   age_min/max    eligibility window, inclusive
+#   policy_term_years_min/max, beneficiary_count_max  structural limits
+default_profile: standard
+
+profiles:
+  standard:
+    coverage_min: 1000000
+    coverage_warn: 50000000
+    coverage_max: 100000000
+    age_min: 18
+    age_max: 80
+    policy_term_years_min: 1
+    policy_term_years_max: 60
+    beneficiary_count_max: 10
+
+  senior_simplified:
+    coverage_min: 500000
+    coverage_warn: 10000000
+    coverage_max: 30000000
+    age_min: 50
+    age_max: 89
+    policy_term_years_min: 1
+    policy_term_years_max: 20
+    beneficiary_count_max: 5
